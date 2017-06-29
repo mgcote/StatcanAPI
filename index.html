@@ -1,0 +1,203 @@
+<!DOCTYPE html>      
+<html>
+<head>
+<title>Statcan Daily Banner</title>
+<style>
+  body { width: 100%;
+  }
+  html, body, h1, h2, h3, h4, h5, h6 {
+     font-family: Arial, sans-serif;
+  }
+  
+ 
+  h3 { font-weight: bold;
+       text-align: center;
+  }
+  
+  .aleft {
+        font-weight: bold;
+        text-align: left;
+        font-size: 120%;
+  }
+  
+  .font110 {
+         font-size: 110%;
+  }
+  
+  .indent50 {
+        font-weight: bold;
+        margin-left: 50px;
+        padding: 5px;
+  }
+  
+  .indent100 {
+        width: 50%;
+        margin-left: 100px;
+        text-align: left;
+        background-color: yellow;
+  }
+  
+  .bold {
+        font-weight: bold;
+  }
+  
+  .link1 {
+        font-style: italic;
+        font-color: blue;
+        text-decoration: none;
+  }
+  
+  .floatleft {
+        float: left;
+  }
+  
+  .floatleft {
+        float: right;
+  }
+  
+  .pad50 {
+        padding-right: 50px;
+  }
+  
+  img {
+        border: 1px solid blue;
+  }
+  
+  .div100 {
+            padding-bottom: 75px;
+            padding-left: 25px;
+            width: 800px;
+            background-color: white;
+            margin: auto;
+  }
+  
+  .but1 {
+            width: 800px;
+            margin: auto;
+  }
+  
+  .but2 {
+            float: right;
+  }
+  
+  .td15 {
+           padding-left: 15px;
+           padding-right: 30px;
+  }
+  
+</style>
+<script type="text/javascript">
+
+  var eText, fText;        // Must be global variables
+  
+  //-------------------------------------------- 
+  function invokeAjax(url,cfunc)
+  //-------------------------------------------- 
+  {
+    if (window.XMLHttpRequest)
+    {// code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp=new XMLHttpRequest();
+    }
+    else
+    {// code for IE6, IE5
+        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }                                                     
+    xmlhttp.onreadystatechange=cfunc;
+    xmlhttp.open("POST",url,true);
+    xmlhttp.setRequestHeader("Content-type","application/json");
+    xmlhttp.send();
+  }
+  
+  //--------------------------------------------   
+  function getJSON(url, lang)
+  //-------------------------------------------- 
+  {
+      var url_out = encodeURIComponent(url);  
+//      var query = "q=" + url_out;              
+      invokeAjax(url_out,function()
+      {
+        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+        {   
+           if (lang == "e") 
+           {                                 // Get and process English banner
+              var title_text  = "Latest Statistics Canada Daily Releases";
+              var button_text = "Français";
+              eText = layoutInfo(xmlhttp.responseText, button_text, title_text, "f");  
+              getJSON("http://www.statcan.gc.ca/sites/json/daily-banner-fra.json", "f");
+           } else {                         // Get and process French banner
+              var title_text  = "Communiqués récents du Quotidien de Statistique Canada";
+              var button_text = "English";
+              fText = layoutInfo(xmlhttp.responseText, button_text, title_text, "e");  
+              document.getElementById("responseOutput").innerHTML = eText;             //English is the default display
+           }
+        }
+    });
+
+  }
+  
+  //--------------------------------------------------------   
+  function layoutInfo(result, button_text, title_text, lang)
+  //--------------------------------------------------------
+  // Layout the Daily banner information
+  //-------------------------------------------------------- 
+  {
+          var obj = JSON.parse(result);
+          var articles = obj["daily"]["article"].length;
+          var dte;  
+          
+          var txt = '<div class="but1"><button class="but2" onclick="switchLang(\'' + lang + '\');">' 
+                  + button_text + '</button></div>';    
+          txt  +='<div class="div100"><h3>' + title_text + '</h3>';                            
+          for (var i = 0; i < articles; i++)
+          {
+             if (i == 0)                  // Eliminate date repetition
+             {
+                dte = obj["daily"]["article"][i]["date"];
+                txt += '<div class="aleft">' + dte + '</div>';
+             } else {
+               if (dte != obj["daily"]["article"][i]["date"])
+               {
+                  dte = obj["daily"]["article"][i]["date"];
+                  txt += '<div class="aleft">' + dte + '</div>';
+               }
+             }
+             txt += '<div class="indent50 font110">'
+                   + '<a href="http://www.statcan.gc.ca'
+                   + obj["daily"]["article"][i]["link"] + '" target="_blank" class="link1">'
+                   + obj["daily"]["article"][i]["title"] 
+                   + '</a></div>'; 
+             txt += '<div class="floatleft indent50">';
+             txt += '<table><tr>'; 
+             txt += '<td>' + '<img src="http://www.statcan.gc.ca' + obj["daily"]["article"][i]["photo"] 
+                  + '" width="75px" height="50px"></td>';
+             txt += '<td class="td15">' + obj["daily"]["article"][i]["summary"] + '</td>';
+             txt +=  '</tr></table>';
+             txt += "</div>";
+          }
+          txt += '</div>';
+
+          return txt;
+  }
+
+  //--------------------------------------------   
+  function switchLang(lang)                      // Toggle between English and French
+  //-------------------------------------------- 
+  {
+       if (lang == "f") 
+       {
+          document.getElementById("responseOutput").innerHTML = fText;
+       } else {
+          document.getElementById("responseOutput").innerHTML = eText;
+       }
+  }
+  
+  // Initiate processing
+  window.onload = getJSON("http://www.statcan.gc.ca/sites/json/daily-banner-eng.json", "e");
+
+</script>
+ 
+</head>
+<body>
+<div id="responseOutput"></div>
+</body>
+</html>
